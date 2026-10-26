@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VoteChain — Secure Blockchain Voting</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+
+  <!--
+    ============================================================
+    EMAILJS CDN — Required for sending OTP emails
+    DO NOT REMOVE THIS LINE
+    ============================================================
+  -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</head>
+<body>
+
+<!-- ===== LOGIN PAGE ===== -->
+<div id="page-login" class="page active">
+  <div class="login-bg"><div class="chain-animation"></div></div>
+  <div class="login-card">
+    <div class="brand">
+      <div class="brand-icon">⛓</div>
+      <h1 class="brand-name">VoteChain</h1>
+      <p class="brand-tagline">Secure · Transparent · Immutable</p>
+    </div>
+
+    <div id="login-error"   class="alert alert-error   hidden"></div>
+    <div id="login-success" class="alert alert-success hidden"></div>
+
+    <!-- STEP 1 — Normal Login -->
+    <div id="login-step1">
+      <div class="form-group">
+        <label>Voter ID / Admin ID</label>
+        <input type="text" id="loginId" placeholder="e.g. V001 or admin" autocomplete="off"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <div class="pass-wrap">
+          <input type="password" id="loginPass" placeholder="Enter your password"/>
+          <button class="eye-btn" onclick="togglePass('loginPass')">👁</button>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="handleLogin()">Login Securely</button>
+      <p class="register-link">Don't have an account? <a onclick="showPage('page-register')">Register here</a></p>
+      <div class="security-badges">
+        <span class="badge">🔒 SHA-256 Hashed</span>
+        <span class="badge">⛓ Blockchain Secured</span>
+        <span class="badge">📧 2FA Protected</span>
+      </div>
+      <div class="demo-hint">
+        <strong>Demo:</strong> Admin → ID: <code>admin</code> | Pass: <code>Admin@123</code><br>
+        Voter → ID: <code>V001</code> | Pass: <code>Vote@2024</code>
+      </div>
+    </div>
+
+    <!-- STEP 2 — 2FA OTP Unlock (shown after 5 failed attempts) -->
+    <div id="login-step2" class="hidden">
+      <div class="twofa-header">
+        <div class="twofa-icon">🔐</div>
+        <h3>Two-Factor Verification</h3>
+        <p id="twofa-email-hint" class="twofa-subtext"></p>
+      </div>
+      <div class="otp-timer-wrap">
+        <span>OTP expires in:</span>
+        <span id="otpTimerDisplay" class="otp-timer">05:00</span>
+      </div>
+      <div class="form-group">
+        <label>Enter 6-digit OTP</label>
+        <input type="text" id="loginOtp" placeholder="_ _ _ _ _ _"
+               maxlength="6" autocomplete="off" class="otp-field"/>
+      </div>
+      <button class="btn-primary" id="loginOtpBtn" onclick="handleVerifyLoginOtp()">
+        ✅ Verify &amp; Unlock Account
+      </button>
+      <button class="btn-resend" id="resendBtn" onclick="handleResendLoginOtp()" disabled>
+        🔄 Resend OTP <span id="resendCooldown"></span>
+      </button>
+      <p class="register-link"><a onclick="cancelTwoFa()">← Back to Login</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== REGISTER PAGE ===== -->
+<div id="page-register" class="page">
+  <div class="login-bg"><div class="chain-animation"></div></div>
+
+  <!-- REG STEP 1 — Fill Details -->
+  <div class="login-card" id="reg-card-step1">
+    <div class="brand">
+      <div class="brand-icon">📝</div>
+      <h1 class="brand-name">Register</h1>
+      <p class="brand-tagline">Create your Voter Account</p>
+    </div>
+    <div id="reg-error"   class="alert alert-error   hidden"></div>
+    <div id="reg-success" class="alert alert-success hidden"></div>
+
+    <div class="form-group">
+      <label>Full Name</label>
+      <input type="text" id="regName" placeholder="Your full name"/>
+    </div>
+    <div class="form-group">
+      <label>Voter ID</label>
+      <input type="text" id="regId" placeholder="e.g. V005"/>
+    </div>
+    <div class="form-group">
+      <label>Email Address</label>
+      <input type="email" id="regEmail" placeholder="your@email.com" autocomplete="off"/>
+      <small class="field-hint">📧 A 6-digit OTP will be sent to verify your email</small>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <div class="pass-wrap">
+        <input type="password" id="regPass" placeholder="Min 8 chars, 1 number, 1 special"/>
+        <button class="eye-btn" onclick="togglePass('regPass')">👁</button>
+      </div>
+      <div class="password-strength" id="passStrength"></div>
+    </div>
+    <div class="form-group">
+      <label>Confirm Password</label>
+      <input type="password" id="regConfirm" placeholder="Re-enter password"/>
+    </div>
+    <button class="btn-primary" id="sendOtpBtn" onclick="handleRegisterStep1()">
+      📧 Send OTP to Verify Email
+    </button>
+    <p class="register-link"><a onclick="showPage('page-login')">← Back to Login</a></p>
+  </div>
+
+  <!-- REG STEP 2 — OTP Verification -->
+  <div class="login-card hidden" id="reg-card-step2">
+    <div class="brand">
+      <div class="brand-icon">📧</div>
+      <h1 class="brand-name">Verify Email</h1>
+      <p class="brand-tagline">OTP Verification</p>
+    </div>
+    <div id="reg-otp-error"   class="alert alert-error   hidden"></div>
+    <div id="reg-otp-success" class="alert alert-success hidden"></div>
+
+    <div class="twofa-header">
+      <div class="twofa-icon">💬</div>
+      <p id="reg-email-display" class="twofa-subtext"></p>
+    </div>
+    <div class="otp-timer-wrap">
+      <span>OTP expires in:</span>
+      <span id="regOtpTimerDisplay" class="otp-timer">05:00</span>
+    </div>
+    <div class="form-group">
+      <label>Enter 6-digit OTP</label>
+      <input type="text" id="regOtp" placeholder="_ _ _ _ _ _"
+             maxlength="6" autocomplete="off" class="otp-field"/>
+    </div>
+    <button class="btn-primary" onclick="handleRegisterStep2()">
+      ✅ Verify &amp; Create Account
+    </button>
+    <button class="btn-resend" id="regResendBtn" onclick="handleRegResendOtp()" disabled>
+      🔄 Resend OTP <span id="regResendCooldown"></span>
+    </button>
+    <p class="register-link"><a onclick="backToRegStep1()">← Edit Details</a></p>
+  </div>
+</div>
+
+<!-- ===== VOTING PAGE ===== -->
+<div id="page-vote" class="page">
+  <nav class="navbar">
+    <div class="nav-brand">⛓ VoteChain</div>
+    <div class="nav-info">
+      <span class="voter-id-display" id="voterDisplay">Voter: V001</span>
+      <span class="block-count">🧱 Blocks: <span id="blockCount">0</span></span>
+    </div>
+    <button class="btn-logout" onclick="handleLogout()">Logout</button>
+  </nav>
+  <div class="vote-container">
+    <div class="vote-header">
+      <h2>🗳 MSRP College Election 2026</h2>
+      <p>Cast your vote for all posts. All votes are mandatory.</p>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="voteProgress" style="width:0%"></div>
+      </div>
+      <p class="progress-text" id="progressText">0 of 4 categories voted</p>
+    </div>
+    <div id="already-voted-msg" class="alert alert-success hidden">
+      ✅ You have already cast your vote. Thank you for participating!
+    </div>
+    <div id="vote-sections">
+      <div class="vote-section" id="section-college">
+        <div class="section-header">
+          <span class="section-icon">🎓</span>
+          <div><h3>College Captain</h3><p>Select 1 candidate</p></div>
+          <span class="voted-check hidden" id="check-college">✅ Voted</span>
+        </div>
+        <div class="candidates-grid" id="candidates-college"></div>
+      </div>
+      <div class="vote-section" id="section-sports">
+        <div class="section-header">
+          <span class="section-icon">⚽</span>
+          <div><h3>Sports Captain</h3><p>Select 1 candidate</p></div>
+          <span class="voted-check hidden" id="check-sports">✅ Voted</span>
+        </div>
+        <div class="candidates-grid" id="candidates-sports"></div>
+      </div>
+      <div class="vote-section" id="section-house">
+        <div class="section-header">
+          <span class="section-icon">🏠</span>
+          <div><h3>House Captain</h3><p>Select 1 candidate</p></div>
+          <span class="voted-check hidden" id="check-house">✅ Voted</span>
+        </div>
+        <div class="candidates-grid" id="candidates-house"></div>
+      </div>
+      <div class="vote-section" id="section-cultural">
+        <div class="section-header">
+          <span class="section-icon">🎭</span>
+          <div><h3>Cultural Captain</h3><p>Select 1 candidate</p></div>
+          <span class="voted-check hidden" id="check-cultural">✅ Voted</span>
+        </div>
+        <div class="candidates-grid" id="candidates-cultural"></div>
+      </div>
+    </div>
+    <div class="submit-section">
+      <div id="submit-warning" class="alert alert-error hidden">
+        ⚠️ You must vote in ALL categories before submitting.
+      </div>
+      <button class="btn-submit" id="submitBtn" onclick="submitVotes()">
+        🔐 Submit Votes to Blockchain
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADMIN DASHBOARD ===== -->
+<div id="page-admin" class="page">
+  <nav class="navbar admin-nav">
+    <div class="nav-brand">⛓ VoteChain Admin</div>
+    <div class="nav-info">
+      <span class="voter-id-display">👑 Administrator</span>
+      <span class="block-count">🧱 Blocks: <span id="adminBlockCount">0</span></span>
+    </div>
+    <button class="btn-logout" onclick="handleLogout()">Logout</button>
+  </nav>
+  <div class="admin-container">
+    <div class="admin-hero">
+      <h2>📊 Election Dashboard</h2>
+      <p>Real-time results secured on the blockchain</p>
+      <div class="stats-row" id="adminStats"></div>
+    </div>
+    <div class="results-grid"    id="adminResults"></div>
+    <div class="blockchain-section">
+      <h3>⛓ Blockchain Ledger</h3>
+      <p class="ledger-desc">Every vote is recorded as an immutable block. Tampering is impossible.</p>
+      <div class="blockchain-chain" id="blockchainVisual"></div>
+    </div>
+    <div class="danger-zone">
+      <h3>⚙ Admin Controls</h3>
+      <button class="btn-reset"  onclick="resetElection()">🔄 Reset Election</button>
+      <button class="btn-verify" onclick="verifyChain()">🔍 Verify Chain Integrity</button>
+    </div>
+  </div>
+</div>
+
+<script src="blockchain.js"></script>
+<script src="auth.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

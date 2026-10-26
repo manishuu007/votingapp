@@ -33,9 +33,9 @@
 // ============================================================
 
 // ── ⚠️  PUT YOUR EMAILJS CREDENTIALS HERE ─────────────────
-const EMAILJS_PUBLIC_KEY   = 'hi-VRRpJZ4gbH1_PB';   // e.g. 'aBcDeFgHiJkLmNoPq'
-const EMAILJS_SERVICE_ID   = 'service_qyhlmyc';   // e.g. 'service_ab12cd3'
-const EMAILJS_TEMPLATE_ID  = 'template_k9yi2kl';  // e.g. 'template_xy98zw1'
+const EMAILJS_PUBLIC_KEY   = 'zltH6dlOPNtwKBcAp';   // e.g. 'aBcDeFgHiJkLmNoPq'
+const EMAILJS_SERVICE_ID   = 'service_2o7nx5k';   // e.g. 'service_ab12cd3'
+const EMAILJS_TEMPLATE_ID  = 'template_rg08uck';  // e.g. 'template_xy98zw1'
 // ──────────────────────────────────────────────────────────
 
 // Initialize EmailJS with your public key
